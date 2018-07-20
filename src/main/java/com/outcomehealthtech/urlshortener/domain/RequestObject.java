@@ -1,6 +1,5 @@
 package com.outcomehealthtech.urlshortener.domain;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,7 +11,6 @@ import javax.validation.constraints.NotNull;
 @Data
 @Entity
 @NoArgsConstructor
-@AllArgsConstructor
 public class RequestObject {
     @Id
     @GeneratedValue
