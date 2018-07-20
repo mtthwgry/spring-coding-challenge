@@ -1,6 +1,5 @@
 package com.outcomehealthtech.urlshortener.web;
 
-import com.outcomehealthtech.urlshortener.domain.RequestObject;
 import com.outcomehealthtech.urlshortener.domain.ShortenRequest;
 import com.outcomehealthtech.urlshortener.domain.ShortenedUrl;
 import com.outcomehealthtech.urlshortener.repository.ShortenedUrlRepository;
@@ -13,9 +12,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.view.RedirectView;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @RestController
 public class UrlShortenerController {
@@ -35,20 +35,6 @@ public class UrlShortenerController {
         return "The fabulous URL shortener.";
     }
 
-    @GetMapping("/foo")
-    public ResponseEntity<Object> foo(@RequestParam String key) {
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(key.length());
-    }
-
-    @PostMapping("/bar")
-    public ResponseEntity<Object> bar(@RequestBody RequestObject requestObject) {
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestObject.getKey().length());
-    }
-
     @PostMapping("/shorten")
     public ResponseEntity<ShortenedUrl> shorten(@RequestBody ShortenRequest request) {
         ShortenedUrl shortenedUrl = shorteningService.shorten(request.getUrl());
@@ -58,19 +44,21 @@ public class UrlShortenerController {
             .body(shortenedUrl);
     }
 
+    @GetMapping("/{shortCode}/not_found")
+    public String notFound(@PathVariable String shortCode) {
+        return "Short code: " + shortCode + " not found";
+    }
+
     @GetMapping("/{shortCode}")
-    public RedirectView redirectToOriginalUrl(@PathVariable String shortCode) {
+    public void redirectToOriginalUrl( @PathVariable String shortCode, HttpServletResponse response) throws IOException {
         ShortenedUrl shortenedUrl = repository.findFirstByShortCode(shortCode);
-        RedirectView redirect = new RedirectView();
 
         if (shortenedUrl == null) {
             log.info("ShortenedUrl not found for: {}. Redirecting to root", shortCode);
-            redirect.setUrl(ShortenedUrl.HTTP_LOCALHOST_8080);
+            response.sendRedirect("/" + shortCode + "/not_found");
         } else {
             log.info("ShortenedUrl found for: {}. Redirecting to: {}", shortCode, shortenedUrl.getOriginalUrl());
-            redirect.setUrl(shortenedUrl.getOriginalUrl());
+            response.sendRedirect(shortenedUrl.getOriginalUrl());
         }
-
-        return redirect;
     }
 }
