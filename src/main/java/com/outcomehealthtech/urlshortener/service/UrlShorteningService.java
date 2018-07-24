@@ -28,10 +28,8 @@ public class UrlShorteningService {
         return repository.save(shortenedUrl);
     }
 
-    private String generateUniqueShortCode() {
-        int randomNumber = new Random().nextInt(0x1000000);
-        String shortCode = String.format("%06x", randomNumber);
-
+    String generateUniqueShortCode() {
+        String shortCode = newShortCode();
         log.info("Generated shortCode: {}", shortCode);
 
         ShortenedUrl existingRecord = repository.findFirstByShortCode(shortCode);
@@ -43,5 +41,10 @@ public class UrlShorteningService {
             log.info("Regenerating, shortCode already exists: {}", shortCode);
             return generateUniqueShortCode();
         }
+    }
+
+    String newShortCode() {
+        int randomNumber = new Random().nextInt(0x1000000);
+        return String.format("%06x", randomNumber);
     }
 }

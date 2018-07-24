@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
 
 @RestController
 public class UrlShortenerController {
@@ -31,22 +32,19 @@ public class UrlShortenerController {
     }
 
     @GetMapping("/")
-    public String root() {
-        return "The fabulous URL shortener.";
+    public ResponseEntity<String> root() {
+        return ResponseEntity.ok()
+            .contentType(MediaType.TEXT_PLAIN)
+            .body("The fabulous URL shortener.");
     }
 
     @PostMapping("/shorten")
-    public ResponseEntity<ShortenedUrl> shorten(@RequestBody ShortenRequest request) {
-        ShortenedUrl shortenedUrl = shorteningService.shorten(request.getUrl());
+    public ResponseEntity<ShortenedUrl> shorten(@RequestBody ShortenRequest requestBody) {
+        ShortenedUrl shortenedUrl = shorteningService.shorten(requestBody.getUrl());
 
-        return ResponseEntity.ok()
+        return ResponseEntity.created(URI.create(shortenedUrl.getShortenedUrl()))
             .contentType(MediaType.APPLICATION_JSON)
             .body(shortenedUrl);
-    }
-
-    @GetMapping("/{shortCode}/not_found")
-    public String notFound(@PathVariable String shortCode) {
-        return "Short code: " + shortCode + " not found";
     }
 
     @GetMapping("/{shortCode}")
@@ -54,8 +52,8 @@ public class UrlShortenerController {
         ShortenedUrl shortenedUrl = repository.findFirstByShortCode(shortCode);
 
         if (shortenedUrl == null) {
-            log.info("ShortenedUrl not found for: {}. Redirecting to root", shortCode);
-            response.sendRedirect("/" + shortCode + "/not_found");
+            log.info("ShortenedUrl not found for: {}", shortCode);
+            response.sendError(404, "Short code \"" + shortCode + "\" not found.");
         } else {
             log.info("ShortenedUrl found for: {}. Redirecting to: {}", shortCode, shortenedUrl.getOriginalUrl());
             response.sendRedirect(shortenedUrl.getOriginalUrl());
